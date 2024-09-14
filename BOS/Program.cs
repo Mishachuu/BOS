@@ -21,6 +21,15 @@ class Program
         string UncClientName,
         string username);
 
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    public struct SESSION_INFO_10
+    {
+        public string sesi10_cname;       // Имя компьютера
+        public string sesi10_username;    // Имя пользователя
+        public uint sesi10_time;          // Время работы сессии
+        public uint sesi10_idle_time;     // Время бездействия сессии
+    }
+
     static void Main()
     {
         IntPtr bufPtr = IntPtr.Zero;
@@ -30,6 +39,21 @@ class Program
         if (result == 0 && entriesRead > 0)
         {
             Console.WriteLine($"{entriesRead} сессий найдено");
+            IntPtr currentPtr = bufPtr;
+
+            // Перебираем каждую сессию
+            for (int i = 0; i < entriesRead; i++)
+            {
+                // Извлекаем информацию о сессии
+                SESSION_INFO_10 sessionInfo = Marshal.PtrToStructure<SESSION_INFO_10>(currentPtr);
+
+                // Выводим информацию о сессии: имя компьютера и имя пользователя
+                Console.WriteLine($"Компьютер: {sessionInfo.sesi10_cname}, Пользователь: {sessionInfo.sesi10_username}, " +
+                                  $"Время работы: {sessionInfo.sesi10_time}, Время простоя: {sessionInfo.sesi10_idle_time}");
+
+                // Переход к следующей структуре
+                currentPtr = IntPtr.Add(currentPtr, Marshal.SizeOf(typeof(SESSION_INFO_10)));
+            }
         }
         else
         {
@@ -55,3 +79,4 @@ class Program
         }
     }
 }
+
