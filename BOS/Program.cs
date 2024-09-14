@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 class Program
 {
-    [DllImport("Netapi32.dll", SetLastError = true)]
+    [DllImport("Netapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
     public static extern int NetSessionEnum(
         string servername,
         string UncClientName,
@@ -15,16 +15,19 @@ class Program
         ref int totalentries,
         ref int resume_handle);
 
-    [DllImport("Netapi32.dll", SetLastError = true)]
+    [DllImport("Netapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
     public static extern int NetSessionDel(
         string servername,
         string UncClientName,
         string username);
 
+    [DllImport("Netapi32.dll", SetLastError = true)]
+    public static extern int NetApiBufferFree(IntPtr Buffer);
+
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     public struct SESSION_INFO_10
     {
-        public string sesi10_cname;       // Имя компьютера
+        public string sesi10_cname;       // Имя компьютера клиента
         public string sesi10_username;    // Имя пользователя
         public uint sesi10_time;          // Время работы сессии
         public uint sesi10_idle_time;     // Время бездействия сессии
@@ -54,11 +57,15 @@ class Program
                 // Переход к следующей структуре
                 currentPtr = IntPtr.Add(currentPtr, Marshal.SizeOf(typeof(SESSION_INFO_10)));
             }
+
+            // Освобождаем память
+            NetApiBufferFree(bufPtr);
         }
         else
         {
             Console.WriteLine("Сессии не найдены");
         }
+        
         if (entriesRead > 0)
         {
             Console.WriteLine("Введите имя компьютера для завершения сессии:");
@@ -74,9 +81,8 @@ class Program
             }
             else
             {
-                Console.WriteLine("Ошибка при завершении сессии.");
+                Console.WriteLine($"Ошибка при завершении сессии: {Marshal.GetLastWin32Error()}");
             }
         }
     }
 }
-
